@@ -1,16 +1,11 @@
-﻿namespace Pos.Api.Models
+﻿namespace Pos.Dashboard.Models
 {
-    public class Product
+    public class ProductDto
     {
         public int Id { get; set; }
         public string Sku { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
-
-        // 👇 add this property
         public bool IsActive { get; set; } = true;
-
-        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }
-

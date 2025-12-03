@@ -1,6 +1,29 @@
-@Pos.Api_HostAddress = http://localhost:5171
-
-GET {{Pos.Api_HostAddress}}/weatherforecast/
+### Get all products
+GET http://localhost:5171/api/products
 Accept: application/json
 
 ###
+
+# Create a new product
+POST http://localhost:5171/api/products
+Content-Type: application/json
+
+{
+  "sku": "COFFEE_MEDIUM",
+  "name": "Medium Coffee",
+  "price": 3.00,
+  "isActive": true
+}
+
+###
+
+# Another example
+POST http://localhost:5171/api/products
+Content-Type: application/json
+
+{
+  "sku": "ICED_LATTE",
+  "name": "Iced Latte",
+  "price": 4.50,
+  "isActive": true
+}

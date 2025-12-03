@@ -1,0 +1,134 @@
+﻿@page
+@model Pos.Dashboard.Pages.ProductsModel
+@{
+    ViewData["Title"] = "Products";
+    bool isEditing = Model.FormProduct.Id != 0;
+}
+
+<h1>Products</h1>
+
+<div style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
+
+    <!-- Left: form to add or edit -->
+    <div style="border:1px solid #ccc; padding:1rem; border-radius:8px; min-width:260px;">
+        <h2>@(isEditing ? "Edit Product" : "Add New Product")</h2>
+
+        <form method="post">
+            <input type="hidden" name="FormProduct.Id" value="@Model.FormProduct.Id" />
+
+            <div style="margin-bottom:0.5rem;">
+                <label for="sku">SKU</label><br />
+                <input id="sku"
+                       name="FormProduct.Sku"
+                       value="@Model.FormProduct.Sku"
+                       style="width:100%;" />
+            </div>
+
+            <div style="margin-bottom:0.5rem;">
+                <label for="name">Name</label><br />
+                <input id="name"
+                       name="FormProduct.Name"
+                       value="@Model.FormProduct.Name"
+                       style="width:100%;" />
+            </div>
+
+            <div style="margin-bottom:0.5rem;">
+                <label for="price">Price</label><br />
+                <input id="price"
+                       name="FormProduct.Price"
+                       value="@Model.FormProduct.Price"
+                       style="width:100%;" />
+            </div>
+
+            <div style="margin-bottom:0.5rem;">
+                <label>
+                    <input type="checkbox"
+                           name="FormProduct.IsActive"
+                           value="true"
+                           @(Model.FormProduct.IsActive ? "checked" : "") />
+                    Active
+                </label>
+            </div>
+
+            <button type="submit">@((isEditing) ? "Save Changes" : "Add Product")</button>
+
+            @if (isEditing)
+            {
+                <a asp-page="/Products" style="margin-left:0.5rem;">Cancel</a>
+            }
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div style="color:red; margin-top:0.5rem;">
+                    There was a problem with your input.
+                </div>
+            }
+        </form>
+    </div>
+
+    <!-- Right: list of existing products -->
+    <div style="flex:1; min-width:320px;">
+        <h2>Existing Products</h2>
+
+        @if (Model.Products.Count == 0)
+        {
+            <p>No products found.</p>
+        }
+        else
+        {
+            <table style="border-collapse:collapse; width:100%;">
+                <thead>
+                    <tr>
+                        <th style="border-bottom:1px solid #ccc; text-align:left; padding:0.3rem;">ID</th>
+                        <th style="border-bottom:1px solid #ccc; text-align:left; padding:0.3rem;">SKU</th>
+                        <th style="border-bottom:1px solid #ccc; text-align:left; padding:0.3rem;">Name</th>
+                        <th style="border-bottom:1px solid #ccc; text-align:right; padding:0.3rem;">Price</th>
+                        <th style="border-bottom:1px solid #ccc; text-align:center; padding:0.3rem;">Active</th>
+                        <th style="border-bottom:1px solid #ccc; text-align:center; padding:0.3rem;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Products)
+                    {
+                        <tr>
+                            <td style="border-bottom:1px solid #eee; padding:0.3rem;">@p.Id</td>
+                            <td style="border-bottom:1px solid #eee; padding:0.3rem;">@p.Sku</td>
+                            <td style="border-bottom:1px solid #eee; padding:0.3rem;">@p.Name</td>
+                            <td style="border-bottom:1px solid #eee; padding:0.3rem; text-align:right;">
+                                @p.Price.ToString("C")
+                            </td>
+                            <td style="border-bottom:1px solid #eee; padding:0.3rem; text-align:center;">
+                                @(p.IsActive ? "✓" : "✗")
+                            </td>
+                            <td style="border-bottom:1px solid #eee; padding:0.3rem; text-align:center; white-space:nowrap;">
+                                <!-- Edit = reload page with EditId -->
+                                <a asp-page="/Products"
+                                   asp-route-EditId="@p.Id"
+                                   style="margin-right:0.4rem;">Edit</a>
+
+                                <!-- Activate / Deactivate -->
+                                <form method="post"
+                                      asp-page-handler="ToggleActive"
+                                      style="display:inline;">
+                                    <input type="hidden" name="id" value="@p.Id" />
+                                    <button type="submit" style="margin-right:0.4rem;">
+                                        @(p.IsActive ? "Deactivate" : "Activate")
+                                    </button>
+                                </form>
+
+                                <!-- Delete -->
+                                <form method="post"
+                                      asp-page-handler="Delete"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Delete this product?');">
+                                    <input type="hidden" name="id" value="@p.Id" />
+                                    <button type="submit">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

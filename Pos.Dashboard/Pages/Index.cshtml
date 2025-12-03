@@ -1,0 +1,66 @@
+﻿@page
+@model Pos.Dashboard.Pages.IndexModel
+@{
+    ViewData["Title"] = "POS Dashboard";
+    var currentLocation = Model.Location ?? "ALL";
+}
+
+<h1>POS Dashboard</h1>
+
+<form method="get" style="margin-bottom:1rem;">
+    <label for="locationSelect">Location: </label>
+    <select id="locationSelect" name="location" onchange="this.form.submit()">
+        @* ALL option *@
+        @if (currentLocation == "ALL")
+        {
+            <option value="ALL" selected>All Locations</option>
+        }
+        else
+        {
+            <option value="ALL">All Locations</option>
+        }
+
+        @* One option per location *@
+        @foreach (var loc in Model.Locations)
+        {
+            if (currentLocation == loc.Code)
+            {
+                <option value="@loc.Code" selected>@loc.Name (@loc.Code)</option>
+            }
+            else
+            {
+                <option value="@loc.Code">@loc.Name (@loc.Code)</option>
+            }
+        }
+    </select>
+</form>
+
+@if (Model.Summary is null)
+{
+    <p>No summary data available.</p>
+}
+else
+{
+    <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
+        <div style="border:1px solid #ccc; padding:1rem; border-radius:8px; min-width:180px;">
+            <h3>Date</h3>
+            <p>@Model.Summary.Date.ToShortDateString()</p>
+        </div>
+        <div style="border:1px solid #ccc; padding:1rem; border-radius:8px; min-width:180px;">
+            <h3>Location</h3>
+            <p>@Model.Summary.LocationCode</p>
+        </div>
+        <div style="border:1px solid #ccc; padding:1rem; border-radius:8px; min-width:180px;">
+            <h3>Total Sales</h3>
+            <p>@Model.Summary.TotalSales.ToString("C")</p>
+        </div>
+        <div style="border:1px solid #ccc; padding:1rem; border-radius:8px; min-width:180px;">
+            <h3>Order Count</h3>
+            <p>@Model.Summary.OrderCount</p>
+        </div>
+        <div style="border:1px solid #ccc; padding:1rem; border-radius:8px; min-width:180px;">
+            <h3>Avg Order</h3>
+            <p>@Model.Summary.AvgOrder.ToString("C")</p>
+        </div>
+    </div>
+}

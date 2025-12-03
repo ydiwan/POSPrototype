@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Pos.Desktop.Models;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Windows;
-using Pos.Desktop.Models;
+using System.Windows.Controls;
 
 namespace Pos.Desktop
 {
@@ -14,6 +15,9 @@ namespace Pos.Desktop
         private readonly HttpClient _httpClient = new();
         private ObservableCollection<Product> _products = new();
         private ObservableCollection<CartItem> _cartItems = new();
+
+        private ObservableCollection<LocationDto> _locations = new();
+        private string _currentLocationCode = "MAIN";  // default
 
         private decimal _subtotal;
         private decimal _tax;
@@ -25,17 +29,57 @@ namespace Pos.Desktop
 
             CartGrid.ItemsSource = _cartItems;
 
-            // Use the HTTP URL from your API console output
-            _httpClient.BaseAddress = new Uri("http://localhost:5171/");
+            _httpClient.BaseAddress = new Uri("http://localhost:5171/"); // your API HTTP URL
 
             Loaded += MainWindow_Loaded;
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            await LoadLocationsAsync();
             await LoadProductsAsync();
             UpdateTotals();
         }
+        private async Task LoadLocationsAsync()
+        {
+            try
+            {
+                var locations = await _httpClient.GetFromJsonAsync<LocationDto[]>("api/locations");
+                if (locations != null && locations.Length > 0)
+                {
+                    _locations = new ObservableCollection<LocationDto>(locations);
+                    LocationCombo.ItemsSource = _locations;
+
+                    // Pick saved/default location or fallback to first
+                    var chosen = _locations.FirstOrDefault(l => l.Code == _currentLocationCode)
+                                 ?? _locations[0];
+
+                    LocationCombo.SelectedItem = chosen;
+                    _currentLocationCode = chosen.Code;
+                    LocationStatusText.Text = $"Active location: {_currentLocationCode}";
+                }
+                else
+                {
+                    LocationStatusText.Text = "No locations found";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load locations: {ex.Message}");
+                LocationStatusText.Text = "Location: (error)";
+            }
+        }
+
+        private void LocationCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LocationCombo.SelectedItem is LocationDto loc)
+            {
+                _currentLocationCode = loc.Code;
+                LocationStatusText.Text = $"Active location: {_currentLocationCode}";
+                // later we can save this to a local config file
+            }
+        }
+
 
         private async Task LoadProductsAsync()
         {
@@ -101,7 +145,7 @@ namespace Pos.Desktop
             {
                 var payload = new
                 {
-                    LocationCode = "MAIN",
+                    LocationCode = _currentLocationCode,
                     Items = _cartItems.Select(c => new { ProductId = c.Product.Id, Quantity = c.Quantity }).ToList()
                 };
 
