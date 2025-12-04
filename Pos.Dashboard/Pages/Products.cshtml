@@ -33,6 +33,22 @@
             </div>
 
             <div style="margin-bottom:0.5rem;">
+                <label for="optGroup">Option Group (e.g. Size)</label><br />
+                <input id="optGroup"
+                       name="FormProduct.OptionGroup"
+                       value="@Model.FormProduct.OptionGroup"
+                       style="width:100%;" />
+            </div>
+
+            <div style="margin-bottom:0.5rem;">
+                <label for="optValue">Option Value (e.g. Small)</label><br />
+                <input id="optValue"
+                       name="FormProduct.OptionValue"
+                       value="@Model.FormProduct.OptionValue"
+                       style="width:100%;" />
+            </div>
+
+            <div style="margin-bottom:0.5rem;">
                 <label for="price">Price</label><br />
                 <input id="price"
                        name="FormProduct.Price"
@@ -85,6 +101,8 @@
                         <th style="border-bottom:1px solid #ccc; text-align:right; padding:0.3rem;">Price</th>
                         <th style="border-bottom:1px solid #ccc; text-align:center; padding:0.3rem;">Active</th>
                         <th style="border-bottom:1px solid #ccc; text-align:center; padding:0.3rem;">Actions</th>
+                        <th>Opt Group</th>
+                        <th>Opt Value</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,6 +113,8 @@
                             <td style="border-bottom:1px solid #eee; padding:0.3rem;">@p.Sku</td>
                             <td style="border-bottom:1px solid #eee; padding:0.3rem;">@p.Name</td>
                             <td style="border-bottom:1px solid #eee; padding:0.3rem; text-align:right;">
+                            <td>@p.OptionGroup</td>
+                            <td>@p.OptionValue</td>
                                 @p.Price.ToString("C")
                             </td>
                             <td style="border-bottom:1px solid #eee; padding:0.3rem; text-align:center;">

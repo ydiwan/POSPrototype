@@ -35,8 +35,8 @@
             <!-- Products list -->
             <GroupBox Header="Products" Grid.Column="0" Margin="5">
                 <ListBox x:Name="ProductsList"
-                     DisplayMemberPath="Name"
-                     MouseDoubleClick="ProductsList_MouseDoubleClick"/>
+                         DisplayMemberPath="DisplayName"
+                         MouseDoubleClick="ProductsList_MouseDoubleClick"/>
             </GroupBox>
 
             <!-- Cart + totals -->

@@ -13,7 +13,7 @@ namespace Pos.Desktop
     public partial class MainWindow : Window
     {
         private readonly HttpClient _httpClient = new();
-        private ObservableCollection<Product> _products = new();
+        private ObservableCollection<ProductGroup> _productGroups = new();
         private ObservableCollection<CartItem> _cartItems = new();
 
         private ObservableCollection<LocationDto> _locations = new();
@@ -85,12 +85,23 @@ namespace Pos.Desktop
         {
             try
             {
-                var products = await _httpClient.GetFromJsonAsync<Product[]>("api/products");
-                if (products != null)
-                {
-                    _products = new ObservableCollection<Product>(products);
-                    ProductsList.ItemsSource = _products;
-                }
+                var products = await _httpClient.GetFromJsonAsync<List<Product>>("api/products");
+                if (products == null) return;
+
+                // build groups by Name + OptionGroup
+                var groups = products
+                    .GroupBy(p => new { p.Name, p.OptionGroup })
+                    .Select(g => new ProductGroup
+                    {
+                        Name = g.Key.Name,
+                        OptionGroup = g.Key.OptionGroup,
+                        Variants = g.ToList()
+                    })
+                    .OrderBy(g => g.Name)
+                    .ToList();
+
+                _productGroups = new ObservableCollection<ProductGroup>(groups);
+                ProductsList.ItemsSource = _productGroups;
             }
             catch (Exception ex)
             {
@@ -98,13 +109,49 @@ namespace Pos.Desktop
             }
         }
 
+
         private void ProductsList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (ProductsList.SelectedItem is Product product)
+            if (ProductsList.SelectedItem is not ProductGroup group)
+                return;
+
+            Product? chosen;
+
+            if (group.Variants.Count == 1)
             {
-                AddProductToCart(product);
+                // simple case: only one variant
+                chosen = group.Variants[0];
             }
+            else
+            {
+                // show popup to pick variant
+                var picker = new VariantPickerWindow(group.Variants, group.Name, group.OptionGroup);
+                picker.Owner = this;
+                var result = picker.ShowDialog();
+                if (result != true || picker.SelectedProduct == null)
+                    return;
+
+                chosen = picker.SelectedProduct;
+            }
+
+            // add chosen product to cart
+            var existing = _cartItems.FirstOrDefault(c => c.Product.Id == chosen.Id);
+            if (existing == null)
+            {
+                // ✅ use your CartItem(Product, int) constructor
+                _cartItems.Add(new CartItem(chosen, 1));
+            }
+            else
+            {
+                // just bump quantity; LineTotal is computed property
+                existing.Quantity++;
+            }
+
+            CartGrid.Items.Refresh();
+            UpdateTotals();
         }
+
+
 
         private void AddProductToCart(Product product)
         {

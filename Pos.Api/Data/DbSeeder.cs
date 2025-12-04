@@ -21,12 +21,38 @@ namespace Pos.Api.Data
             if (!db.Products.Any())
             {
                 db.Products.AddRange(
-                    new Product { Sku = "COFFEE_SMALL", Name = "Small Coffee", Price = 2.50m },
-                    new Product { Sku = "COFFEE_LARGE", Name = "Large Coffee", Price = 3.50m },
-                    new Product { Sku = "PASTRY", Name = "Pastry", Price = 4.00m }
+                    new Product
+                    {
+                        Sku = "COFFEE_SM",
+                        Name = "Coffee",
+                        OptionGroup = "Size",
+                        OptionValue = "Small",
+                        Price = 2.50m,
+                        IsActive = true
+                    },
+                    new Product
+                    {
+                        Sku = "COFFEE_LG",
+                        Name = "Coffee",
+                        OptionGroup = "Size",
+                        OptionValue = "Large",
+                        Price = 3.50m,
+                        IsActive = true
+                    },
+                    new Product
+                    {
+                        Sku = "PASTRY",
+                        Name = "Pastry",
+                        OptionGroup = null,
+                        OptionValue = null,
+                        Price = 4.00m,
+                        IsActive = true
+                    }
                 );
                 db.SaveChanges();
             }
+
         }
     }
-}
+    }
+
