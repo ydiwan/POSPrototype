@@ -1,0 +1,48 @@
+﻿@page "{id:int}"
+@model Pos.Dashboard.Pages.OrderDetailsModel
+@{
+    ViewData["Title"] = "Order Details";
+}
+
+@if (Model.Order == null)
+{
+    <p>Order not found.</p>
+}
+else
+{
+    <h1>Order #@Model.Order.Id</h1>
+
+    <p>
+        <b>Time (UTC):</b> @Model.Order.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm") <br />
+        <b>Location:</b> @Model.Order.LocationCode <br />
+        <b>Total:</b> @Model.Order.Total.ToString("C")
+    </p>
+
+    <h2>Items</h2>
+
+    <table style="border-collapse:collapse; width:100%;">
+        <thead>
+            <tr>
+                <th style="border-bottom:1px solid #ccc; text-align:left; padding:0.4rem;">Item</th>
+                <th style="border-bottom:1px solid #ccc; text-align:right; padding:0.4rem;">Unit</th>
+                <th style="border-bottom:1px solid #ccc; text-align:right; padding:0.4rem;">Qty</th>
+                <th style="border-bottom:1px solid #ccc; text-align:right; padding:0.4rem;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var i in Model.Order.Items)
+            {
+                <tr>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem;">@i.ProductName</td>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem; text-align:right;">@i.UnitPrice.ToString("C")</td>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem; text-align:right;">@i.Quantity</td>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem; text-align:right;">@i.LineTotal.ToString("C")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p style="margin-top:1rem;">
+        <a asp-page="/Orders">← Back to Orders</a>
+    </p>
+}

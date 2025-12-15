@@ -1,0 +1,69 @@
+﻿@page
+@model Pos.Dashboard.Pages.OrdersModel
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<h1>Orders</h1>
+
+<form method="get" style="margin-bottom:1rem; display:flex; gap:1rem; flex-wrap:wrap; align-items:end;">
+    <div>
+        <label>Location</label><br />
+        <select name="LocationCode">
+            <option value="ALL" selected="@(Model.LocationCode == "ALL")">ALL</option>
+            @foreach (var loc in Model.Locations)
+            {
+                <option value="@loc.Code" selected="@(Model.LocationCode == loc.Code)">
+                    @loc.Name (@loc.Code)
+                </option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label>From (UTC)</label><br />
+        <input type="date" name="From" value="@(Model.From?.ToString("yyyy-MM-dd"))" />
+    </div>
+
+    <div>
+        <label>To (UTC)</label><br />
+        <input type="date" name="To" value="@(Model.To?.ToString("yyyy-MM-dd"))" />
+    </div>
+
+    <button type="submit">Apply</button>
+</form>
+
+@if (Model.Orders.Count == 0)
+{
+    <p>No orders found.</p>
+}
+else
+{
+    <table style="border-collapse:collapse; width:100%;">
+        <thead>
+            <tr>
+                <th style="border-bottom:1px solid #ccc; text-align:left; padding:0.4rem;">Order #</th>
+                <th style="border-bottom:1px solid #ccc; text-align:left; padding:0.4rem;">Time (UTC)</th>
+                <th style="border-bottom:1px solid #ccc; text-align:left; padding:0.4rem;">Location</th>
+                <th style="border-bottom:1px solid #ccc; text-align:right; padding:0.4rem;">Items</th>
+                <th style="border-bottom:1px solid #ccc; text-align:right; padding:0.4rem;">Total</th>
+                <th style="border-bottom:1px solid #ccc; text-align:center; padding:0.4rem;">View</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in Model.Orders)
+            {
+                <tr>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem;">@o.Id</td>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem;">@o.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem;">@o.LocationCode</td>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem; text-align:right;">@o.ItemCount</td>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem; text-align:right;">@o.Total.ToString("C")</td>
+                    <td style="border-bottom:1px solid #eee; padding:0.4rem; text-align:center;">
+                        <a asp-page="/OrderDetails" asp-route-id="@o.Id">View</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
