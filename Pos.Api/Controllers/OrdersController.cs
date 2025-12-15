@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Pos.Api.Data;
 using Pos.Api.Models;
+using Pos.Api.Models.Dtos;
 
 namespace Pos.Api.Controllers
 {
@@ -92,5 +93,71 @@ namespace Pos.Api.Controllers
 
             return Ok(response);
         }
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<OrderListDto>>> GetOrders(
+    DateTime? from,
+    DateTime? to,
+    string? locationCode)
+        {
+            var query = _db.Orders
+                .Include(o => o.Items)
+                .Include(o => o.Location)   // ✅ join Location
+                .AsQueryable();
+
+            if (from.HasValue)
+                query = query.Where(o => o.CreatedAtUtc >= from.Value);
+
+            if (to.HasValue)
+                query = query.Where(o => o.CreatedAtUtc <= to.Value);
+
+            if (!string.IsNullOrWhiteSpace(locationCode) && locationCode != "ALL")
+                query = query.Where(o => o.Location.Code == locationCode); // ✅ filter by Location.Code
+
+            var orders = await query
+                .OrderByDescending(o => o.CreatedAtUtc)
+                .Select(o => new OrderListDto
+                {
+                    Id = o.Id,
+                    CreatedAtUtc = o.CreatedAtUtc,
+                    LocationCode = o.Location.Code, // ✅
+                    Total = o.Total,
+                    ItemCount = o.Items.Sum(i => i.Quantity)
+                })
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<OrderDetailDto>> GetOrder(int id)
+        {
+            var order = await _db.Orders
+                .Include(o => o.Location) // ✅
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null)
+                return NotFound();
+
+            var dto = new OrderDetailDto
+            {
+                Id = order.Id,
+                CreatedAtUtc = order.CreatedAtUtc,
+                LocationCode = order.Location.Code, // ✅
+                Total = order.Total,
+                Items = order.Items.Select(i => new OrderLineDto
+                {
+                    ProductName = i.Product.Name,
+                    UnitPrice = i.UnitPrice,
+                    Quantity = i.Quantity
+                }).ToList()
+            };
+
+            return Ok(dto);
+        }
+
+
+
     }
 }
