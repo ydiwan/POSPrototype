@@ -2,11 +2,14 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace Pos.Desktop
 {
@@ -22,6 +25,8 @@ namespace Pos.Desktop
         private decimal _subtotal;
         private decimal _tax;
         private decimal _total;
+        private DispatcherTimer? _connectionTimer;
+        private bool _isCheckingConnection;
 
         public MainWindow()
         {
@@ -39,34 +44,39 @@ namespace Pos.Desktop
             await LoadLocationsAsync();
             await LoadProductsAsync();
             UpdateTotals();
+            StartConnectionMonitor();
         }
         private async Task LoadLocationsAsync()
         {
             try
             {
                 var locations = await _httpClient.GetFromJsonAsync<LocationDto[]>("api/locations");
+                UpdateConnectionStatus(true);
                 if (locations != null && locations.Length > 0)
                 {
                     _locations = new ObservableCollection<LocationDto>(locations);
                     LocationCombo.ItemsSource = _locations;
 
-                    // Pick saved/default location or fallback to first
-                    var chosen = _locations.FirstOrDefault(l => l.Code == _currentLocationCode)
+                    // Pick saved/default location or fallback to first enabled location
+                    var chosen = _locations.FirstOrDefault(l => l.Code == _currentLocationCode && !l.IsPosDisabled)
+                                 ?? _locations.FirstOrDefault(l => !l.IsPosDisabled)
                                  ?? _locations[0];
 
                     LocationCombo.SelectedItem = chosen;
-                    _currentLocationCode = chosen.Code;
-                    LocationStatusText.Text = $"Active location: {_currentLocationCode}";
+                    UpdateLocationStatus(chosen);
                 }
                 else
                 {
                     LocationStatusText.Text = "No locations found";
+                    CompleteSaleButton.IsEnabled = false;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to load locations: {ex.Message}");
                 LocationStatusText.Text = "Location: (error)";
+                CompleteSaleButton.IsEnabled = false;
+                UpdateConnectionStatus(false);
             }
         }
 
@@ -74,9 +84,69 @@ namespace Pos.Desktop
         {
             if (LocationCombo.SelectedItem is LocationDto loc)
             {
-                _currentLocationCode = loc.Code;
-                LocationStatusText.Text = $"Active location: {_currentLocationCode}";
+                UpdateLocationStatus(loc);
                 // later we can save this to a local config file
+            }
+        }
+
+        private void UpdateLocationStatus(LocationDto loc)
+        {
+            _currentLocationCode = loc.Code;
+
+            var status = $"Active location: {_currentLocationCode}";
+            if (loc.IsPosDisabled)
+            {
+                status += " (POS disabled)";
+            }
+
+            LocationStatusText.Text = status;
+            CompleteSaleButton.IsEnabled = !loc.IsPosDisabled;
+        }
+
+        private void UpdateConnectionStatus(bool isOnline)
+        {
+            ConnectionStatusDot.Fill = isOnline ? Brushes.Green : Brushes.Red;
+            ConnectionStatusDot.Stroke = isOnline ? Brushes.DarkGreen : Brushes.DarkRed;
+            ConnectionStatusText.Text = isOnline ? "Online" : "Offline";
+        }
+
+        private void StartConnectionMonitor()
+        {
+            if (_connectionTimer != null)
+            {
+                return;
+            }
+
+            _connectionTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(5)
+            };
+            _connectionTimer.Tick += async (_, _) => await CheckConnectionAsync();
+            _connectionTimer.Start();
+        }
+
+        private async Task CheckConnectionAsync()
+        {
+            if (_isCheckingConnection)
+            {
+                return;
+            }
+
+            _isCheckingConnection = true;
+            try
+            {
+                var response = await _httpClient.GetAsync(
+                    "api/locations",
+                    HttpCompletionOption.ResponseHeadersRead);
+                UpdateConnectionStatus(response.IsSuccessStatusCode);
+            }
+            catch (HttpRequestException)
+            {
+                UpdateConnectionStatus(false);
+            }
+            finally
+            {
+                _isCheckingConnection = false;
             }
         }
 
@@ -106,6 +176,10 @@ namespace Pos.Desktop
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to load products: {ex.Message}");
+                if (ex is HttpRequestException)
+                {
+                    UpdateConnectionStatus(false);
+                }
             }
         }
 
@@ -187,6 +261,11 @@ namespace Pos.Desktop
                 MessageBox.Show("Cart is empty.");
                 return;
             }
+            if (LocationCombo.SelectedItem is LocationDto selectedLoc && selectedLoc.IsPosDisabled)
+            {
+                MessageBox.Show("POS is disabled for this location.");
+                return;
+            }
 
             try
             {
@@ -197,6 +276,11 @@ namespace Pos.Desktop
                 };
 
                 var response = await _httpClient.PostAsJsonAsync("api/orders", payload);
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    MessageBox.Show("POS is disabled for this location.");
+                    return;
+                }
                 response.EnsureSuccessStatusCode();
 
                 var result = await response.Content.ReadFromJsonAsync<OrderResponse>();
@@ -210,6 +294,10 @@ namespace Pos.Desktop
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to complete sale: {ex.Message}");
+                if (ex is HttpRequestException)
+                {
+                    UpdateConnectionStatus(false);
+                }
             }
         }
 

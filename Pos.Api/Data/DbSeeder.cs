@@ -1,4 +1,6 @@
 ﻿using System.Linq;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Pos.Api.Models;
 
 namespace Pos.Api.Data
@@ -7,12 +9,14 @@ namespace Pos.Api.Data
     {
         public static void Seed(PosDbContext db)
         {
+            EnsureLocationPosDisabledColumn(db);
+
             // Locations
             if (!db.Locations.Any())
             {
                 db.Locations.AddRange(
-                    new Location { Code = "MAIN", Name = "Main Store" },
-                    new Location { Code = "STORE2", Name = "Second Store" }
+                    new Location { Code = "MAIN", Name = "Main Store", IsPosDisabled = false },
+                    new Location { Code = "STORE2", Name = "Second Store", IsPosDisabled = false }
                 );
                 db.SaveChanges();
             }
@@ -53,6 +57,21 @@ namespace Pos.Api.Data
             }
 
         }
+
+        private static void EnsureLocationPosDisabledColumn(PosDbContext db)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(
+                    "ALTER TABLE Locations ADD COLUMN IsPosDisabled INTEGER NOT NULL DEFAULT 0;");
+            }
+            catch (SqliteException ex) when (
+                ex.SqliteErrorCode == 1 &&
+                ex.Message.Contains("duplicate column", System.StringComparison.OrdinalIgnoreCase))
+            {
+                // Column already exists.
+            }
+        }
     }
-    }
+}
 

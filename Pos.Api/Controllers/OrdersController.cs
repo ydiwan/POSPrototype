@@ -38,6 +38,10 @@ namespace Pos.Api.Controllers
             {
                 return BadRequest($"Unknown location code: {locationCode}");
             }
+            if (location.IsPosDisabled)
+            {
+                return Conflict($"POS is disabled for location code: {locationCode}");
+            }
 
             // load products in one query
             var productIds = dto.Items.Select(i => i.ProductId).ToList();

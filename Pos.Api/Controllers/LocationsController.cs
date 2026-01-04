@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Pos.Api.Data;
 using Pos.Api.Models;
+using Pos.Api.Models.Dtos;
 
 namespace Pos.Api.Controllers
 {
@@ -25,6 +26,24 @@ namespace Pos.Api.Controllers
                 .ToListAsync();
 
             return Ok(locations);
+        }
+
+        // PUT /api/locations/{id}/pos-status
+        [HttpPut("{id:int}/pos-status")]
+        public async Task<ActionResult<Location>> UpdatePosStatus(
+            int id,
+            [FromBody] UpdateLocationPosStatusDto dto)
+        {
+            var location = await _db.Locations.FindAsync(id);
+            if (location == null)
+            {
+                return NotFound();
+            }
+
+            location.IsPosDisabled = dto.IsPosDisabled;
+            await _db.SaveChangesAsync();
+
+            return Ok(location);
         }
     }
 }

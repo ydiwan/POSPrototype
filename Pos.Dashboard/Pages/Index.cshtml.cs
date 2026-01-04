@@ -51,5 +51,23 @@ namespace Pos.Dashboard.Pages
                 Location = "ALL";
             }
         }
+
+        public async Task<IActionResult> OnPostTogglePosAsync(int id, bool disable, string? location)
+        {
+            Location = location;
+
+            var client = _httpClientFactory.CreateClient("PosApi");
+            var response = await client.PutAsJsonAsync(
+                $"api/locations/{id}/pos-status",
+                new { IsPosDisabled = disable });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                ModelState.AddModelError(string.Empty, "Failed to update POS status.");
+            }
+
+            await OnGetAsync();
+            return Page();
+        }
     }
 }

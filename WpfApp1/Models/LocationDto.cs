@@ -6,5 +6,7 @@
         public string Code { get; set; } = string.Empty;   // MAIN, STORE2, etc.
         public string Name { get; set; } = string.Empty;   // "Main Store"
         public string? Address { get; set; }
+        public bool IsPosDisabled { get; set; }
+        public string DisplayName => IsPosDisabled ? $"{Name} (disabled)" : Name;
     }
 }

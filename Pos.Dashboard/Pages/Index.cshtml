@@ -64,3 +64,60 @@ else
         </div>
     </div>
 }
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        Failed to update POS status.
+    </div>
+}
+
+<h2 style="margin-top:2rem;">POS App Access</h2>
+@if (Model.Locations.Count == 0)
+{
+    <p>No locations available.</p>
+}
+else
+{
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                <th>Store ID</th>
+                <th>Location</th>
+                <th>Code</th>
+                <th>Status</th>
+                <th style="width:160px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var loc in Model.Locations)
+            {
+                <tr>
+                    <td>@loc.Id</td>
+                    <td>@loc.Name</td>
+                    <td>@loc.Code</td>
+                    <td>
+                        @if (loc.IsPosDisabled)
+                        {
+                            <span class="badge bg-secondary">Disabled</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Enabled</span>
+                        }
+                    </td>
+                    <td>
+                        <form method="post" asp-page-handler="TogglePos" class="d-inline">
+                            <input type="hidden" name="id" value="@loc.Id" />
+                            <input type="hidden" name="disable" value="@(loc.IsPosDisabled ? "false" : "true")" />
+                            <input type="hidden" name="location" value="@currentLocation" />
+                            <button class="btn btn-sm @(loc.IsPosDisabled ? "btn-success" : "btn-danger")" type="submit">
+                                @(loc.IsPosDisabled ? "Enable POS" : "Disable POS")
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
